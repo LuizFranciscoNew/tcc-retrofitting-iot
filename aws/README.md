@@ -1,6 +1,6 @@
 # Configuração na AWS (região us-east-1)
 
-## Tabelas do Amazon DynamoDB (capacidade sob demanda)
+## Tabelas do Amazon DynamoDB
 
 | Tabela | Chave de partição | Chave de classificação | Gravada por |
 |---|---|---|---|
@@ -24,9 +24,14 @@ DynamoDB Streams habilitado em telemetria_galpao (eventos INSERT acionam monitor
 
 ## Regra do AWS IoT Core
 
-Encaminha as mensagens do tópico `galpao/esp32-galpao-01/telemetria` para a lambda_telemetria_tcc.
-SQL da regra: (PENDENTE: copiar do console, em IoT Core > Roteamento de mensagens > Regras)
+Encaminha as mensagens do tópico `galpao/esp32-galpao-01/telemetria` para a lambda_telemetria_tcc (ação: AWS Lambda).
+
+```sql
+SELECT * FROM 'galpao/esp32-galpao-01/telemetria'
+```
+
+A mensagem JSON publicada pelo ESP32 é repassada inteira à função, que lê `deviceId`, `temperatura` e `umidade` e recalcula o ITU (o campo `thi` enviado pelo firmware é ignorado).
 
 ## Permissões
 
-Cada função usa um perfil de execução próprio com acesso apenas às tabelas de que precisa (ex.: monitoramento_comunicacao: Query em telemetria_galpao; GetItem, PutItem e UpdateItem em monitoramento_comunicacao).
+A função monitoramento_comunicacao tem permissão apenas para Query em telemetria_galpao e GetItem, PutItem e UpdateItem em monitoramento_comunicacao (política em linha com menor privilégio).
