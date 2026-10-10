@@ -1,0 +1,32 @@
+# Configuração na AWS (região us-east-1)
+
+## Tabelas do Amazon DynamoDB (capacidade sob demanda)
+
+| Tabela | Chave de partição | Chave de classificação | Gravada por |
+|---|---|---|---|
+| telemetria_galpao | deviceId (String) | timestamp (Number, s) | lambda_telemetria_tcc |
+| estado_alerta_galpao | deviceId (String) | - | monitoramento_thi |
+| historico_estado_galpao | deviceId (String) | timestamp (Number, s) | monitoramento_thi |
+| eventos_interruptor | ID (String) | - | monitoramento_interruptor (timestamp em ms) |
+| monitoramento_comunicacao | id (String) | - | monitoramento_comunicacao |
+
+DynamoDB Streams habilitado em telemetria_galpao (eventos INSERT acionam monitoramento_thi).
+
+## Funções Lambda
+
+| Função | Runtime | Disparo | Variáveis de ambiente |
+|---|---|---|---|
+| lambda_telemetria_tcc | Python 3.12 | Regra do AWS IoT Core (tópico galpao/esp32-galpao-01/telemetria) | - |
+| monitoramento_thi | Python 3.12 | DynamoDB Streams (telemetria_galpao) | TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, LIMIAR_ENTRADA (80), LIMIAR_SAIDA (78) |
+| monitoramento_comunicacao | Python 3.12 | EventBridge Scheduler, rate(10 minutes) | TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, LIMITE_MINUTOS (30), NOME_LOCAL |
+| monitoramento_interruptor | Node.js 24.x | EventBridge Scheduler, a cada 2 min | TUYA_CLIENT_ID, TUYA_CLIENT_SECRET, DEVICE_ID_VENTILADOR, DEVICE_ID_PULVERIZADOR |
+| consultar_condicoes_galpao_alexa | Python 3.14 | Alexa Skills Kit | - |
+
+## Regra do AWS IoT Core
+
+Encaminha as mensagens do tópico `galpao/esp32-galpao-01/telemetria` para a lambda_telemetria_tcc.
+SQL da regra: (PENDENTE: copiar do console, em IoT Core > Roteamento de mensagens > Regras)
+
+## Permissões
+
+Cada função usa um perfil de execução próprio com acesso apenas às tabelas de que precisa (ex.: monitoramento_comunicacao: Query em telemetria_galpao; GetItem, PutItem e UpdateItem em monitoramento_comunicacao).
