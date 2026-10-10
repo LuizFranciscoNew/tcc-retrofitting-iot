@@ -1,6 +1,6 @@
-   # Segredos: nunca versionar
-   *.pem
-   *.key
-   *.crt
-   secrets.h
-   .env
+# Segredos: nunca versionar
+*.pem
+*.key
+*.crt
+secrets.h
+.env
